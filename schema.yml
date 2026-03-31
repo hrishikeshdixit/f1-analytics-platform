@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: fact_laps
+    description: "Analysis-ready lap data for the 2025 F1 season"
+    columns:
+      - name: driver_code
+        description: "Three letter driver code e.g. VER, HAM"
+        tests:
+          - not_null
+      - name: lap_number
+        description: "Lap number within the race"
+        tests:
+          - not_null
+      - name: lap_time_seconds
+        description: "Lap time in seconds"
+        tests:
+          - not_null
+      - name: tyre_compound
+        description: "Tyre compound used"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
+  - name: dim_drivers
+    description: "Driver-level summary statistics for the 2025 Australian GP"
+    columns:
+      - name: driver_code
+        description: "Three letter driver code e.g. VER, HAM"
+        tests:
+          - not_null
+          - unique
+      - name: team
+        description: "Constructor team name"
+        tests:
+          - not_null
