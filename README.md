@@ -8,7 +8,7 @@ Python · FastF1 · Google BigQuery · dbt · Looker Studio · Streamlit
 ## Project Structure
 - `ingestion/` — FastF1 data extraction and BigQuery loading
 - `dbt/` — Data transformations and quality tests
-- `dashboards/` — Streamlit app (in progress)
+- `dashboards/` — Looker Studio Dashboard and Streamlit app (in progress)
 - `ml/` — Driver fingerprinting model (in progress)
 
 ## Status
