@@ -12,7 +12,7 @@ Python · FastF1 · Google BigQuery · dbt · Looker Studio · Streamlit
 - `ml/` — Driver fingerprinting model (in progress)
 
 ## Status
-- ✅ Phase 1 — Data Pipeline
-- ✅ Phase 2 — dbt Transformations
-- ⏳ Phase 3 — Dashboards
-- ⏳ Phase 4 — Automation & Containerization
+-  Phase 1 — Data Pipeline ✅
+-  Phase 2 — dbt Transformations ✅
+-  Phase 3 — Dashboards (WIP)
+-  Phase 4 — Automation & Containerization (Planned)
