@@ -1,0 +1,9 @@
+fastf1
+pandas
+google-cloud-bigquery
+db-dtypes
+dbt-bigquery
+python-dotenv
+streamlit
+plotly
+scikit-learn
