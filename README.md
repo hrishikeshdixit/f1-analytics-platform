@@ -92,7 +92,7 @@ The platform automatically ingests all F1 race weekend sessions every week, tran
 | Qualifying Analysis | Fastest Q laps, gap to pole, sector scorecards |
 | Race Overview | Fastest laps, team pace, tyre usage by team |
 | Driver Lap Analysis | Lap time evolution, sector pivot, full lap table |
-| Tyre Strategy & Speed | Strategy chart, 4 speed trap comparisons |
+| Tyre Strategy & Speed | Strategy chart, 2 speed trap comparisons |
 
 ---
 
