@@ -1,5 +1,6 @@
-import streamlit as st
 from google.cloud import bigquery
+from google.oauth2 import service_account
+import streamlit as st
 
 SESSION_TABLE_MAP = {
     "Race": "fact_laps",
@@ -13,8 +14,17 @@ SESSION_TABLE_MAP = {
 
 @st.cache_resource
 def get_bq_client():
-    """Create and cache BigQuery client."""
-    return bigquery.Client()
+
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"]
+    )
+
+    client = bigquery.Client(
+        credentials=credentials,
+        project=st.secrets["gcp_service_account"]["project_id"]
+    )
+
+    return client
 
 @st.cache_data
 def get_races():
