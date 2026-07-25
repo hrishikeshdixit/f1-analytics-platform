@@ -9,7 +9,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ── Setup ──
 load_dotenv()
-fastf1.Cache.enable_cache('cache/')
+CACHE_DIR = "cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
+fastf1.Cache.enable_cache(CACHE_DIR)
 
 # ── Page Config ──
 st.set_page_config(
