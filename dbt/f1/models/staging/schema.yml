@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: stg_laps
+    description: "Cleaned race lap data — Race sessions only"
+    columns:
+      - name: driver_code
+        description: "Three letter driver code"
+        tests:
+          - not_null
+      - name: lap_time_seconds
+        description: "Lap time in seconds"
+        tests:
+          - not_null
+      - name: session_type
+        description: "Must always be Race"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Race']
+
+  - name: stg_laps_qualifying
+    description: "Cleaned qualifying lap data"
+    columns:
+      - name: driver_code
+        tests:
+          - not_null
+      - name: lap_time_seconds
+        tests:
+          - not_null
+      - name: session_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Qualifying', 'Sprint Qualifying']
+
+  - name: stg_laps_practice
+    description: "Cleaned practice lap data"
+    columns:
+      - name: driver_code
+        tests:
+          - not_null
+      - name: lap_time_seconds
+        tests:
+          - not_null
+      - name: session_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Practice 1', 'Practice 2', 'Practice 3']
+
+  - name: stg_laps_sprint
+    description: "Cleaned sprint race lap data"
+    columns:
+      - name: driver_code
+        tests:
+          - not_null
+      - name: lap_time_seconds
+        tests:
+          - not_null
+      - name: session_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sprint']

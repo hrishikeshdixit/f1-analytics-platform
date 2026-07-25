@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    database: f1-analytics-491120
+    schema: raw
+    tables:
+      - name: laps
+        description: "Raw lap data loaded from FastF1"
