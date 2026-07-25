@@ -4,7 +4,7 @@ An end-to-end data analytics platform for the 2026 Formula 1 season — built to
 
 ---
 
-## 📌 What This Project Does
+## What This Project Does
 
 The platform automatically ingests all F1 race weekend sessions every week, transforms the data through a structured dbt modeling layer with automated quality testing, and serves it through two front ends:
 
@@ -13,7 +13,7 @@ The platform automatically ingests all F1 race weekend sessions every week, tran
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 FastF1 API (Official F1 Timing)
@@ -36,6 +36,9 @@ dbt Transformation Layer
 │  + GMM Model    │    │  Dashboard       │
 └─────────────────┘    └──────────────────┘
 ```
+
+<img width="2720" height="2960" alt="f1_analytics_architecture" src="https://github.com/user-attachments/assets/b1c572d5-a11f-458f-b9c6-3d21cecec5e2" />
+
 
 ---
 
