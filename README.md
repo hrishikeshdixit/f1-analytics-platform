@@ -2,6 +2,9 @@
 
 An end-to-end data analytics platform for the 2026 Formula 1 season — built to demonstrate modern data engineering, machine learning, and interactive visualisation on Google Cloud.
 
+Live Dashboard Link: https://datastudio.google.com/reporting/109e28bb-6618-4e05-9ad8-95c6447984a4
+Streamlit App Link: 
+
 ---
 
 ## What This Project Does
