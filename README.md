@@ -1,4 +1,4 @@
-# 🏎️ F1 Analytics Platform
+# F1 Analytics Platform
 
 An end-to-end data analytics platform for the 2026 Formula 1 season — built to demonstrate modern data engineering, machine learning, and interactive visualisation on Google Cloud.
 
@@ -15,34 +15,12 @@ The platform automatically ingests all F1 race weekend sessions every week, tran
 
 ## Architecture
 
-```
-FastF1 API (Official F1 Timing)
-        ↓
-extract_and_load.py (Python ingestion)
-        ↓
-BigQuery — raw.laps (all sessions)
-        ↓
-dbt Transformation Layer
-  ├── stg_laps          (Race)
-  ├── stg_laps_qualifying (Qualifying + Sprint Qualifying)
-  ├── stg_laps_practice  (FP1, FP2, FP3)
-  ├── stg_laps_sprint    (Sprint Race)
-  ├── fact_laps          (Race mart — ML + App)
-  ├── dim_drivers        (Driver season summary)
-  └── fact_all_sessions  (All sessions — Looker Studio)
-        ↓
-┌─────────────────┐    ┌──────────────────┐
-│  Streamlit App  │    │  Looker Studio   │
-│  + GMM Model    │    │  Dashboard       │
-└─────────────────┘    └──────────────────┘
-```
-
 <img width="2720" height="2960" alt="f1_analytics_architecture" src="https://github.com/user-attachments/assets/b1c572d5-a11f-458f-b9c6-3d21cecec5e2" />
 
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Tool | Purpose |
 |---|---|
@@ -60,20 +38,20 @@ dbt Transformation Layer
 
 ---
 
-## 📊 Data Coverage
+## Data Coverage
 
 - **Season:** 2026 F1 World Championship
-- **Rounds loaded:** 9 (through British GP)
+- **Rounds loaded:** 10 (through Belgian GP)
 - **Sessions per round:** Practice 1/2/3, Sprint Qualifying, Sprint, Qualifying, Race
 - **Raw rows:** ~150,000+ laps across all sessions
 - **dbt models:** 7 staging + mart models
-- **Data quality tests:** 24 automated tests
+- **Data quality tests:** 25 automated tests
 
 ---
 
-## 🖥️ Streamlit App Pages
+## Streamlit App Pages
 
-### 🏎️ Circuit Replay
+### Circuit Replay
 - Race/session selector with dynamic session detection per race weekend
 - 2D sector-coloured track map (S1=Red, S2=Yellow, S3=Purple)
 - Turn number annotations, start/finish flag, pit exit marker
@@ -83,7 +61,7 @@ dbt Transformation Layer
 - Teammate line style differentiation (solid vs dashed)
 - Driver photos and team background theming
 
-### 🧬 Driver Fingerprinting
+### Driver Fingerprinting
 - **Gaussian Mixture Model** clustering of all 22 drivers
 - **Circuit-normalised features** — lap times expressed as % gap to circuit fastest (not raw seconds) for fair cross-circuit comparison
 - 14 features: race pace, consistency, sector times, tyre management, sprint pace
@@ -92,7 +70,7 @@ dbt Transformation Layer
 - Similar drivers panel using Euclidean distance
 - GMM probability table showing soft cluster membership per driver
 
-### 🏆 Championship Standings
+### Championship Standings
 - Live WDC and WCC standings from FastF1 results
 - Dynamic sprint round detection — no hardcoded round numbers
 - Race + sprint points calculated separately
@@ -101,12 +79,12 @@ dbt Transformation Layer
   - Points progression chart
   - Race-by-race results table with sprint points
 
-### 🏠 Home
+### Home
 - Coming soon
 
 ---
 
-## 📈 Looker Studio Dashboard
+## Looker Studio Dashboard
 
 | Page | Content |
 |---|---|
@@ -118,7 +96,7 @@ dbt Transformation Layer
 
 ---
 
-## 🤖 ML Model — Gaussian Mixture Models
+## ML Model — Gaussian Mixture Models
 
 GMM was chosen over K-Means because F1 drivers don't fit neatly into hard clusters. A driver like Russell is simultaneously competitive on one-lap pace but inconsistent on race management. GMM produces **soft cluster membership probabilities** per driver — more statistically honest than a binary assignment.
 
@@ -137,7 +115,7 @@ Raw lap times can't be compared across circuits (Monza laps ≈ 80s, Monaco laps
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 f1-analytics-platform/
@@ -162,7 +140,7 @@ f1-analytics-platform/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.11+
@@ -173,7 +151,7 @@ f1-analytics-platform/
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/f1-analytics-platform.git
+git clone https://github.com/hrishikeshdixit/f1-analytics-platform.git
 cd f1-analytics-platform
 
 # Create virtual environment
@@ -215,7 +193,7 @@ streamlit run dashboards/app.py
 
 ---
 
-## 📋 Weekly Workflow
+## Weekly Workflow
 
 After each race weekend:
 
@@ -232,7 +210,7 @@ dbt build
 
 ---
 
-## 🔒 Security Notes
+## Security Notes
 
 The following are excluded from this repo via `.gitignore`:
 - `secrets/` — GCP service account credentials
@@ -243,7 +221,7 @@ The following are excluded from this repo via `.gitignore`:
 
 ---
 
-## 📌 Status
+## Status
 
 | Phase | Status |
 |---|---|
@@ -257,7 +235,7 @@ The following are excluded from this repo via `.gitignore`:
 
 ---
 
-## 👤 Author
+## Author
 
 Built as a portfolio project demonstrating end-to-end data engineering skills.
 Master's student in Information Systems.
