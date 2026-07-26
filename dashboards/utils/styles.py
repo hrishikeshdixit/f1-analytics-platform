@@ -28,10 +28,10 @@ def hex_to_rgba(hex_color, opacity=0.2):
     return f'rgba({r},{g},{b},{opacity})'
 
 def get_driver_photo(driver_code):
-    path = f"C:/Users/Asus/Desktop/UTA/Projects/f1-analytics-platform/dashboards/assets/drivers/{driver_code}.jpg"
+    path = f"dashboards/assets/drivers/{driver_code}.jpg"
     if os.path.exists(path):
         return path
-    return f"C:/Users/Asus/Desktop/UTA/Projects/f1-analytics-platform/dashboards/assets/drivers/default.jpg"
+    return f"dashboards/assets/drivers/default.jpg"
 
 def set_background_theme(team_color):
     r = int(team_color[1:3], 16)
