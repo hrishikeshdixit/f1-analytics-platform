@@ -11,11 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 cache_dir = '/tmp/fastf1_cache/' if os.environ.get('STREAMLIT_SHARING_MODE') else 'cache/'
 fastf1.Cache.enable_cache(cache_dir)
-'''
-CACHE_DIR = "cache"
-os.makedirs(CACHE_DIR, exist_ok=True)
-fastf1.Cache.enable_cache(CACHE_DIR)
-'''
+
 
 # ── Page Config ──
 st.set_page_config(
