@@ -1,4 +1,5 @@
 import streamlit as st
+from bigquery import get_bq_client
 import fastf1
 import pandas as pd
 
