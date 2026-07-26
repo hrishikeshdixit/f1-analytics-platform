@@ -15,7 +15,10 @@ SESSION_TABLE_MAP = {
 @st.cache_resource
 def get_bq_client():
 
-    credentials = service_account.Credentials.from_service_account_info(
+    """Create and cache BigQuery client."""
+    return bigquery.Client()
+
+'''    credentials = service_account.Credentials.from_service_account_info(
         st.secrets["gcp_service_account"]
     )
 
@@ -24,7 +27,9 @@ def get_bq_client():
         project=st.secrets["gcp_service_account"]["project_id"]
     )
 
-    return client
+    return client'''
+
+
 
 @st.cache_data
 def get_races():
@@ -73,7 +78,7 @@ def get_drivers(race_name, session_type):
 
     table = SESSION_TABLE_MAP.get(
         session_type,
-        "fact_laps"
+        "fact_all_sessions"
     )
 
     session_filter = f"AND session_type = '{session_type}'" \
