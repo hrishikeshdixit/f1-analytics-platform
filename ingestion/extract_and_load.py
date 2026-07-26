@@ -62,6 +62,30 @@ def load_to_bigquery(df, table_id):
     
     print(f"Successfully loaded {len(df)} rows to {table_id}")
 
+def load_telemetry_to_bigquery(df, table_id):
+    """
+    Load telemetry data into a partitioned BigQuery table.
+    Partitioned by RoundNumber for efficient querying.
+    """
+    client = bigquery.Client()
+
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND",
+        autodetect=True,
+        time_partitioning=bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field=None  # Uses ingestion time
+        ),
+        clustering_fields=["Driver", "SessionType", "RoundNumber"]
+    )
+
+    print(f"  Loading telemetry to BigQuery: {table_id}")
+    job = client.load_table_from_dataframe(
+        df, table_id, job_config=job_config
+    )
+    job.result()
+    print(f"  ✅ Loaded {len(df)} telemetry points")
+
 '''
 if __name__ == "__main__":
     PROJECT_ID = os.getenv('BQ_PROJECT_ID')
@@ -152,6 +176,22 @@ if __name__ == "__main__":
 
     print(f"Already loaded sessions: {existing_sessions}")
 
+    # Check existing telemetry in BigQuery
+    telemetry_query = f"""
+        SELECT DISTINCT RoundNumber, SessionType
+        FROM `{PROJECT_ID}.{RAW_DATASET}.telemetry`
+    """
+
+    try:
+        existing_tel = client.query(telemetry_query).to_dataframe()
+        existing_telemetry = set(
+            zip(existing_tel["RoundNumber"], existing_tel["SessionType"])
+        )
+    except Exception:
+        existing_telemetry = set()
+
+    print(f"Already loaded telemetry sessions: {existing_telemetry}")
+
     for _, event in schedule.iterrows():
         round_num = event['RoundNumber']
         race_name = event['EventName']
@@ -177,35 +217,32 @@ if __name__ == "__main__":
                 continue
 
             try:
-                # Find the scheduled time for this session
-                session_date = None
-
-                for i in range(1, 6):
-                    if event.get(f"Session{i}") == session_type:
-                        session_date = event.get(f"Session{i}DateUtc")
-                        break
-
-                # Skip sessions that haven't happened yet
-                if pd.isna(session_date):
-                    continue
-
-                session_date = pd.Timestamp(session_date)
-
-                if session_date > current_time:
-                    print(f"  ⏳ {session_type} has not occurred yet")
-                    continue
                 session = extract_session(YEAR, round_num, session_type)
                 laps_df = process_laps(session)
 
                 if laps_df.empty:
-                    print(f"  ⚠️ {session_type} — no lap data available")
+                    print(f"  ⚠️ {session_type} — no lap data")
                     continue
 
+                # Load laps
                 load_to_bigquery(
                     laps_df,
                     f"{PROJECT_ID}.{RAW_DATASET}.laps"
                 )
-                print(f"  ✅ {session_type} done!")
+                print(f"  ✅ {session_type} laps done!")
+
+                # Load telemetry if not already loaded
+                if (round_num, session_type) not in existing_telemetry:
+                    tel_df = extract_telemetry(session, round_num, YEAR)
+
+                    if tel_df is not None and not tel_df.empty:
+                        load_telemetry_to_bigquery(
+                            tel_df,
+                            f"{PROJECT_ID}.{RAW_DATASET}.telemetry"
+                        )
+                        print(f"  ✅ {session_type} telemetry done!")
+                else:
+                    print(f"  ⏭️ {session_type} telemetry already loaded")
 
             except Exception as e:
                 print(f"  ❌ {session_type} failed: {e}")
