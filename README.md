@@ -1,9 +1,8 @@
-🏎️ F1 Analytics Platform
+## 🏎️ F1 Analytics Platform
 
 An end-to-end data analytics platform for the 2026 Formula 1 season — built to demonstrate modern data engineering, machine learning, and interactive visualisation on Google Cloud.
-
-Looker Studo Dashboard Link: 
-Streamlit app Link: 
+Looker Studo Dashboard Link: https://datastudio.google.com/s/mS5BDNv--sQ
+Streamlit app Link: https://f1analyticsplatform.streamlit.app/
 
 ---
 
