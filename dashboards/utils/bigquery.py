@@ -3,7 +3,7 @@ from google.oauth2 import service_account
 import streamlit as st
 
 SESSION_TABLE_MAP = {
-    "Race": "fact_all_sessions",
+    "Race": "fact_laps",
     "Qualifying": "stg_laps_qualifying",
     "Sprint Qualifying": "stg_laps_qualifying",
     "Sprint": "stg_laps_sprint",
@@ -40,7 +40,32 @@ def get_races():
             race_name,
             round_number,
             year
-        FROM `f1-analytics-491120.transformed.fact_all_sessions`
+        FROM `f1-analytics-491120.transformed.fact_laps`
+
+        UNION DISTINCT
+
+        SELECT DISTINCT
+            race_name,
+            round_number,
+            year
+        FROM `f1-analytics-491120.transformed.stg_laps_qualifying`
+
+        UNION DISTINCT
+
+        SELECT DISTINCT
+            race_name,
+            round_number,
+            year
+        FROM `f1-analytics-491120.transformed.stg_laps_sprint`
+
+        UNION DISTINCT
+
+        SELECT DISTINCT
+            race_name,
+            round_number,
+            year
+        FROM `f1-analytics-491120.transformed.stg_laps_practice`
+
         ORDER BY round_number
     """
     return client.query(query).to_dataframe()
@@ -53,7 +78,7 @@ def get_drivers(race_name, session_type):
 
     table = SESSION_TABLE_MAP.get(
         session_type,
-        "fact_all_sessions"
+        "fact_laps"
     )
 
     session_filter = f"AND session_type = '{session_type}'" \
@@ -77,7 +102,7 @@ def get_max_laps(race_name, session_type='Race'):
     # Map session type to correct table
     table_map = SESSION_TABLE_MAP
 
-    table = table_map.get(session_type, 'fact_all_sessions')
+    table = table_map.get(session_type, 'fact_laps')
     session_filter = f"AND session_type = '{session_type}'" \
         if session_type != 'Race' else ""
 
@@ -94,6 +119,7 @@ def get_max_laps(race_name, session_type='Race'):
     except Exception:
         return 1
 
+
 @st.cache_data
 def get_driver_features():
     """Get aggregated driver features for ML model — normalised per circuit."""
@@ -103,7 +129,7 @@ def get_driver_features():
             SELECT
                 race_name,
                 MIN(lap_time_seconds) AS circuit_fastest_lap
-            FROM `f1-analytics-491120.transformed.fact_all_sessions`
+            FROM `f1-analytics-491120.transformed.fact_laps`
             WHERE is_race_representative = TRUE
             AND lap_time_seconds IS NOT NULL
             GROUP BY race_name
