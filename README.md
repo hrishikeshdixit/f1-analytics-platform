@@ -2,6 +2,9 @@
 
 An end-to-end data analytics platform for the 2026 Formula 1 season — built to demonstrate modern data engineering, machine learning, and interactive visualisation on Google Cloud.
 
+Looker Studo Dashboard Link: 
+Streamlit app Link: 
+
 ---
 
 ## What This Project Does
@@ -15,7 +18,8 @@ The platform automatically ingests all F1 race weekend sessions every week, tran
 
 ## Architecture
 
-<img width="2720" height="2960" alt="f1_analytics_architecture" src="https://github.com/user-attachments/assets/0142effc-b277-4ba4-bad6-3d24c94da5b8" />
+<img width="2720" height="2960" alt="f1_analytics_architecture" src="https://github.com/user-attachments/assets/465917ea-4910-4651-967c-71522a92c248" />
+
 
 ---
 
