@@ -14,20 +14,22 @@ SESSION_TABLE_MAP = {
 
 @st.cache_resource
 def get_bq_client():
-
-    """Create and cache BigQuery client."""
-    return bigquery.Client()
-
-'''    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
-    )
-
-    client = bigquery.Client(
-        credentials=credentials,
-        project=st.secrets["gcp_service_account"]["project_id"]
-    )
-
-    return client'''
+    try:
+        if 'gcp_service_account' in st.secrets:
+            from google.oauth2 import service_account
+            credentials = service_account.Credentials.from_service_account_info(
+                dict(st.secrets['gcp_service_account']),
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            return bigquery.Client(
+                credentials=credentials,
+                project='f1-analytics-491120'
+            )
+        else:
+            return bigquery.Client()
+    except Exception as e:
+        st.error(f"BigQuery connection failed: {e}")
+        return None
 
 
 
