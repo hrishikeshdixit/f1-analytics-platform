@@ -3,7 +3,7 @@ from google.oauth2 import service_account
 import streamlit as st
 
 SESSION_TABLE_MAP = {
-    "Race": "fact_laps",
+    "Race": "fact_all_sessions",
     "Qualifying": "stg_laps_qualifying",
     "Sprint Qualifying": "stg_laps_qualifying",
     "Sprint": "stg_laps_sprint",
