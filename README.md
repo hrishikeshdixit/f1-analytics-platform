@@ -15,27 +15,7 @@ The platform automatically ingests all F1 race weekend sessions every week, tran
 
 ## Architecture
 
-```
-FastF1 API (Official F1 Timing)
-        ↓
-extract_and_load.py (Python ingestion)
-        ↓
-BigQuery — raw.laps (all sessions)
-        ↓
-dbt Transformation Layer
-  ├── stg_laps          (Race)
-  ├── stg_laps_qualifying (Qualifying + Sprint Qualifying)
-  ├── stg_laps_practice  (FP1, FP2, FP3)
-  ├── stg_laps_sprint    (Sprint Race)
-  ├── fact_laps          (Race mart — ML + App)
-  ├── dim_drivers        (Driver season summary)
-  └── fact_all_sessions  (All sessions — Looker Studio)
-        ↓
-┌─────────────────┐    ┌──────────────────┐
-│  Streamlit App  │    │  Looker Studio   │
-│  + GMM Model    │    │  Dashboard       │
-└─────────────────┘    └──────────────────┘
-```
+<img width="2720" height="2960" alt="f1_analytics_architecture" src="https://github.com/user-attachments/assets/0142effc-b277-4ba4-bad6-3d24c94da5b8" />
 
 ---
 
