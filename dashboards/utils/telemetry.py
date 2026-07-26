@@ -1,5 +1,5 @@
 import streamlit as st
-from bigquery import get_bq_client
+from dashboards.utils.bigquery import get_bq_client
 import fastf1
 import pandas as pd
 
