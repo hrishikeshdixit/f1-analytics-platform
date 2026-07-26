@@ -78,7 +78,7 @@ def get_drivers(race_name, session_type):
 
     table = SESSION_TABLE_MAP.get(
         session_type,
-        "fact_all_sessions"
+        "fact_laps"
     )
 
     session_filter = f"AND session_type = '{session_type}'" \
@@ -118,18 +118,6 @@ def get_max_laps(race_name, session_type='Race'):
         return int(result) if result else 1
     except Exception:
         return 1
-'''
-def get_max_laps(race_name):
-    """Get total number of laps for a race."""
-    client = get_bq_client()
-    query = f"""
-        SELECT MAX(lap_number) as max_lap
-        FROM `f1-analytics-491120.transformed.fact_laps`
-        WHERE race_name = '{race_name}'
-    """
-    return int(client.query(query).to_dataframe()['max_lap'].iloc[0])
-'''
-
 
 @st.cache_data
 def get_driver_features():
