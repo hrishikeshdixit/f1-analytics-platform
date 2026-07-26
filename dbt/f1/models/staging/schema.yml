@@ -67,3 +67,19 @@ models:
           - accepted_values:
               arguments:
                 values: ['Sprint']
+  
+  - name: stg_telemetry
+    description: "Cleaned telemetry data — all laps, all sessions, all rounds"
+    columns:
+      - name: driver_code
+        tests:
+          - not_null
+      - name: lap_number
+        tests:
+          - not_null
+      - name: speed
+        tests:
+          - not_null
+      - name: distance
+        tests:
+          - not_null

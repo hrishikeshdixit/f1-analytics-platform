@@ -7,3 +7,6 @@ sources:
     tables:
       - name: laps
         description: "Raw lap data loaded from FastF1"
+  
+      - name: telemetry
+        description: "Raw telemetry data — all laps, all sessions, partitioned by ingestion date, clustered by Driver/SessionType/RoundNumber"
