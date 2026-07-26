@@ -78,7 +78,7 @@ def get_drivers(race_name, session_type):
 
     table = SESSION_TABLE_MAP.get(
         session_type,
-        "fact_laps"
+        "fact_all_sessions"
     )
 
     session_filter = f"AND session_type = '{session_type}'" \
