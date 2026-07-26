@@ -4,86 +4,115 @@ import pandas as pd
 
 @st.cache_data
 def get_telemetry(year, round_number, driver_code, session_identifier='R'):
+    client = get_bq_client()
+    
+    session_map = {
+        'R': 'Race', 'Q': 'Qualifying', 'Sprint': 'Sprint',
+        'FP1': 'Practice 1', 'FP2': 'Practice 2', 'FP3': 'Practice 3',
+        'Sprint Qualifying': 'Sprint Qualifying'
+    }
+    session_type = session_map.get(session_identifier, session_identifier)
+    
+    query = f"""
+        WITH lap_distances AS (
+            SELECT 
+                lap_number,
+                MAX(distance) AS total_distance
+            FROM `f1-analytics-491120.transformed.stg_telemetry`
+            WHERE driver_code = '{driver_code}'
+            AND round_number = {round_number}
+            AND year = {year}
+            AND session_type = '{session_type}'
+            GROUP BY lap_number
+        ),
+        fastest_lap AS (
+            SELECT lap_number
+            FROM lap_distances
+            ORDER BY total_distance DESC
+            LIMIT 1
+        )
+        SELECT
+            pos_x       AS X,
+            pos_y       AS Y,
+            pos_z       AS Z,
+            speed       AS Speed,
+            throttle    AS Throttle,
+            CAST(brake AS INT64) * 100 AS Brake,
+            gear        AS Gear,
+            distance    AS Distance
+        FROM `f1-analytics-491120.transformed.stg_telemetry`
+        WHERE driver_code = '{driver_code}'
+        AND round_number = {round_number}
+        AND year = {year}
+        AND session_type = '{session_type}'
+        AND lap_number = (SELECT lap_number FROM fastest_lap)
+        ORDER BY distance
     """
-    Load fastest lap telemetry for a driver from FastF1.
-    Returns DataFrame with X, Y, Speed columns or None if unavailable.
-    """
+    
     try:
-        session = fastf1.get_session(year, round_number, session_identifier)
-        session.load(telemetry=True, laps=True)
-        driver_laps = session.laps.pick_driver(driver_code)
-
-        if driver_laps.empty:
-            return None
-
-        fastest_lap = driver_laps.pick_fastest()
-
-        if fastest_lap is None:
-            return None
-
-        telemetry = fastest_lap.get_telemetry()
-
-        if 'X' not in telemetry.columns or 'Y' not in telemetry.columns:
-            return None
-
-        return telemetry[['X', 'Y', 'Speed', 'Distance']]
-
+        df = client.query(query).to_dataframe()
+        return df if not df.empty else None
     except Exception:
         return None
     
 @st.cache_data
-def get_lap_telemetry(year, round_number, driver_code, lap_number, session_identifier = 'R'):
+def get_lap_telemetry(year, round_number, driver_code,
+                      lap_number, session_identifier='R'):
+    client = get_bq_client()
+    
+    session_map = {
+        'R': 'Race', 'Q': 'Qualifying', 'Sprint': 'Sprint',
+        'FP1': 'Practice 1', 'FP2': 'Practice 2', 'FP3': 'Practice 3',
+        'Sprint Qualifying': 'Sprint Qualifying'
+    }
+    session_type = session_map.get(session_identifier, session_identifier)
+
+    query = f"""
+        SELECT
+            pos_x       AS X,
+            pos_y       AS Y,
+            speed       AS Speed,
+            throttle    AS Throttle,
+            CAST(brake AS INT64) * 100 AS Brake,
+            gear        AS Gear,
+            distance    AS Distance
+        FROM `f1-analytics-491120.transformed.stg_telemetry`
+        WHERE driver_code = '{driver_code}'
+        AND round_number = {round_number}
+        AND year = {year}
+        AND session_type = '{session_type}'
+        AND lap_number = {lap_number}
+        ORDER BY distance
     """
-    Get full telemetry for a specific lap number.
-    Returns Speed, Throttle, Brake, Gear, Distance, X, Y columns.
-    """
+
     try:
-        session = fastf1.get_session(year, round_number, session_identifier)
-        session.load(telemetry=True, laps=True)
-        driver_laps = session.laps.pick_driver(driver_code)
-
-        # Get specific lap
-        lap = driver_laps[driver_laps['LapNumber'] == lap_number]
-
-        if lap.empty:
+        df = client.query(query).to_dataframe()
+        if df.empty:
             return None
 
-        lap = lap.iloc[0]
-        telemetry = lap.get_telemetry()
+        # Detect lap type
+        fastest_query = f"""
+            SELECT lap_number
+            FROM (
+                SELECT lap_number, MAX(distance) AS total_distance
+                FROM `f1-analytics-491120.transformed.stg_telemetry`
+                WHERE driver_code = '{driver_code}'
+                AND round_number = {round_number}
+                AND year = {year}
+                AND session_type = '{session_type}'
+                GROUP BY lap_number
+            )
+            ORDER BY total_distance DESC
+            LIMIT 1
+        """
+        fastest = client.query(fastest_query).to_dataframe()
+        fastest_lap = fastest.iloc[0]['lap_number'] if not fastest.empty else None
 
-        required = ['Speed', 'Throttle', 'Brake', 'nGear', 'Distance', 'X', 'Y']
-        for col in required:
-            if col not in telemetry.columns:
-                return None
-        driver_laps_all = session.laps.pick_driver(driver_code)
-        all_lap_times = driver_laps_all['LapTime'].dt.total_seconds().dropna()
-        current_lap_seconds = lap['LapTime'].total_seconds() \
-            if pd.notna(lap['LapTime']) else None
+        is_flying = (lap_number == fastest_lap)
+        df['is_flying'] = is_flying
+        df['lap_type'] = 'flying' if is_flying else 'cool_down'
 
-        if current_lap_seconds and len(all_lap_times) > 0:
-            fastest_time_seconds = all_lap_times.min()
-            is_flying = bool(current_lap_seconds <= fastest_time_seconds * 1.10)
-        else:
-            is_flying = False
-
-        # Detect out lap — lap immediately after pit or first lap of session
-        is_out_lap = pd.notna(lap.get('PitOutTime', None))
-
-        # Lap type: 'flying', 'out_lap', 'cool_down'
-        if is_out_lap:
-            lap_type = 'out_lap'
-        elif is_flying:
-            lap_type = 'flying'
-        else:
-            lap_type = 'cool_down'
-
-        telemetry = telemetry[required].copy()
-        telemetry = telemetry.rename(columns={'nGear': 'Gear'})
-        telemetry['Brake'] = telemetry['Brake'].astype(int) * 100
-        telemetry['is_flying'] = is_flying
-        telemetry['lap_type'] = lap_type
-
-        return telemetry
+        return df
 
     except Exception:
         return None
@@ -210,33 +239,32 @@ def get_championship_standings(year):
     
 @st.cache_data
 def get_pit_exit(year, round_number, driver_code):
+    client = get_bq_client()
+    
+    query = f"""
+        SELECT pos_x AS x, pos_y AS y
+        FROM `f1-analytics-491120.transformed.stg_telemetry`
+        WHERE driver_code = '{driver_code}'
+        AND round_number = {round_number}
+        AND year = {year}
+        AND session_type = 'Race'
+        AND lap_number = (
+            SELECT MIN(lap_number) + 1
+            FROM `f1-analytics-491120.transformed.stg_telemetry`
+            WHERE driver_code = '{driver_code}'
+            AND round_number = {round_number}
+            AND year = {year}
+            AND session_type = 'Race'
+        )
+        ORDER BY distance
+        LIMIT 1
     """
-    Get approximate pit exit GPS coordinates from lap data.
-    """
+    
     try:
-        session = fastf1.get_session(year, round_number, 'R')
-        session.load(telemetry=True, laps=True)
-        driver_laps = session.laps.pick_driver(driver_code)
-
-        # Find a lap where driver came out of pits
-        pit_out_laps = driver_laps[driver_laps['PitOutTime'].notna()]
-
-        if pit_out_laps.empty:
+        df = client.query(query).to_dataframe()
+        if df.empty:
             return None
-
-        # Get telemetry for first pit out lap
-        pit_lap = pit_out_laps.iloc[0]
-        tel = pit_lap.get_telemetry()
-
-        if tel.empty or 'X' not in tel.columns:
-            return None
-
-        # Pit exit is at the very start of the out lap
-        return {
-            'x': float(tel['X'].iloc[5]),
-            'y': float(tel['Y'].iloc[5])
-        }
-
+        return {'x': float(df['x'].iloc[0]), 'y': float(df['y'].iloc[0])}
     except Exception:
         return None
     
