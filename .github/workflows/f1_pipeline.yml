@@ -47,11 +47,7 @@ jobs:
           echo "BQ_DATASET_RAW=raw" >> .env
           echo "BQ_DATASET_TRANSFORMED=transformed" >> .env
 
-      # Step 7 — Run ingestion
-      - name: Run F1 data ingestion
-        run: python ingestion/extract_and_load.py
-
-        # Step 7b — Set up dbt profile
+        # Step 7 — Set up dbt profile
       - name: Set up dbt profile
         run: |
           mkdir -p ~/.dbt
@@ -69,6 +65,11 @@ jobs:
                 keyfile: secrets/gcp_key.json
             target: dev
           EOF
+
+      # Step 7b — Run ingestion
+      - name: Run F1 data ingestion
+        run: python ingestion/extract_and_load.py
+
 
       # Step 8 — Run dbt
       - name: Run dbt models
