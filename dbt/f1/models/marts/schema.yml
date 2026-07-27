@@ -16,6 +16,14 @@ models:
         description: "Lap time in seconds"
         tests:
           - not_null
+      - name: tyre_compound
+        description: "Tyre compound used"
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
+              config:
+                severity: warn
       - name: session_type
         description: "Practice 1/2/3, Sprint Qualifying, Sprint, Qualifying, Race"
         tests:
