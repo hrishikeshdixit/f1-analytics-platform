@@ -47,7 +47,6 @@ def get_telemetry(year, round_number, driver_code, session_identifier='R'):
         AND year = {year}
         AND session_type = '{session_type}'
         AND lap_number = (SELECT lap_number FROM fastest_lap)
-        AND lap_time_secods < 80
         ORDER BY distance
     """
     
@@ -103,7 +102,8 @@ def get_lap_telemetry(year, round_number, driver_code,
             AND round_number = {round_number}
             AND year = {year}
             AND session_type = '{session_type}'
-            AND lap_number = {lap_number};
+            AND lap_number = {lap_number}
+            AND lap_time_seconds < 80;
         """
         lap_info = client.query(fastest_query).to_dataframe()
 
