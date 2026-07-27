@@ -1,0 +1,65 @@
+name: F1 Data Pipeline
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday 9am UTC
+  workflow_dispatch:       # Also allows manual trigger from GitHub UI
+
+jobs:
+  run_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1 — Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2 — Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Step 3 — Cache pip dependencies
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4 — Install dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5 — Write GCP credentials from GitHub secret
+      - name: Set up GCP credentials
+        run: |
+          mkdir -p secrets
+          echo '${{ secrets.GCP_KEY_JSON }}' > secrets/gcp_key.json
+
+      # Step 6 — Write .env file
+      - name: Set up environment variables
+        run: |
+          echo "GOOGLE_APPLICATION_CREDENTIALS=./secrets/gcp_key.json" >> .env
+          echo "BQ_PROJECT_ID=${{ secrets.BQ_PROJECT_ID }}" >> .env
+          echo "BQ_DATASET_RAW=raw" >> .env
+          echo "BQ_DATASET_TRANSFORMED=transformed" >> .env
+
+      # Step 7 — Run ingestion
+      - name: Run F1 data ingestion
+        run: python ingestion/extract_and_load.py
+
+      # Step 8 — Run dbt
+      - name: Run dbt models
+        working-directory: dbt/f1
+        run: |
+          dbt deps
+          dbt run
+          dbt test
+
+      # Step 9 — Notify on failure
+      - name: Notify on failure
+        if: failure()
+        run: echo "Pipeline failed! Check logs above."
