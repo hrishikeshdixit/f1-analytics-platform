@@ -102,8 +102,7 @@ def get_lap_telemetry(year, round_number, driver_code,
             AND round_number = {round_number}
             AND year = {year}
             AND session_type = '{session_type}'
-            AND lap_number = {lap_number}
-            AND lap_time_seconds < 80;
+            AND lap_number = {lap_number};
         """
         lap_info = client.query(fastest_query).to_dataframe()
 
