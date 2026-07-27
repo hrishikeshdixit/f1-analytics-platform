@@ -93,18 +93,16 @@ def get_lap_telemetry(year, round_number, driver_code,
 
         # Detect lap type
         fastest_query = f"""
+
             SELECT lap_number
-            FROM (
-                SELECT lap_number, MAX(distance) AS total_distance
-                FROM `f1-analytics-491120.transformed.stg_telemetry`
-                WHERE driver_code = '{driver_code}'
-                AND round_number = {round_number}
-                AND year = {year}
-                AND session_type = '{session_type}'
-                GROUP BY lap_number
-            )
-            ORDER BY total_distance DESC
-            LIMIT 1
+            FROM `f1-analytics-491120.transformed.fact_all_sessions`
+            WHERE driver_code = '{driver_code}'
+            AND round_number = {round_number}
+            AND year = {year}
+            AND session_type = '{session_type}'
+            AND lap_time_seconds IS NOT NULL
+    ORDER BY lap_time_seconds ASC
+    LIMIT 1
         """
         fastest = client.query(fastest_query).to_dataframe()
         fastest_lap = fastest.iloc[0]['lap_number'] if not fastest.empty else None
