@@ -105,11 +105,11 @@ def get_lap_telemetry(year, round_number, driver_code,
     LIMIT 1
         """
         fastest = client.query(fastest_query).to_dataframe()
-        fastest_lap = fastest.iloc[0]['lap_number'] if not fastest.empty else None
+        fastest_lap = int(fastest.iloc[0]["lap_number"]) if not fastest.empty else None
 
-        is_flying = (int(lap_number) == int(fastest_lap))
-        df['is_flying'] = is_flying
-        df['lap_type'] = 'flying' if is_flying else 'cool_down'
+        is_flying = fastest_lap is not None and int(lap_number) == fastest_lap
+        df["is_flying"] = is_flying
+        df["lap_type"] = "flying" if is_flying else "cool_down"
 
         return df
 
