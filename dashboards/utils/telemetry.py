@@ -47,6 +47,7 @@ def get_telemetry(year, round_number, driver_code, session_identifier='R'):
         AND year = {year}
         AND session_type = '{session_type}'
         AND lap_number = (SELECT lap_number FROM fastest_lap)
+        AND lap_time_secods < 80
         ORDER BY distance
     """
     
