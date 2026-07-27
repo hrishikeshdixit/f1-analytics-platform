@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: f1_analytics_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./secrets:/app/secrets
+      - ./cache:/app/cache
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  pipeline:
+    build: .
+    container_name: f1_analytics_pipeline
+    volumes:
+      - ./secrets:/app/secrets
+      - ./cache:/app/cache
+    env_file:
+      - .env
+    command: >
+      sh -c "
+        python ingestion/extract_and_load.py &&
+        cd dbt/f1 && dbt run && dbt test
+      "
+    profiles:
+      - pipeline

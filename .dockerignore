@@ -1,0 +1,10 @@
+venv/
+secrets/
+.env
+cache/
+__pycache__/
+*.pyc
+dbt/f1/target/
+dbt/f1/logs/
+.git/
+*.json
