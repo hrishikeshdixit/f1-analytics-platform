@@ -47,7 +47,7 @@ jobs:
           echo "BQ_DATASET_RAW=raw" >> .env
           echo "BQ_DATASET_TRANSFORMED=transformed" >> .env
 
-        # Step 7 — Set up dbt profile
+      # Step 7 — Set up dbt profile
       - name: Set up dbt profile
         run: |
           mkdir -p ~/.dbt
@@ -62,7 +62,7 @@ jobs:
                 threads: 4
                 timeout_seconds: 300
                 location: US
-                keyfile: secrets/gcp_key.json
+                keyfile: ${{ github.workspace }}/secrets/gcp_key.json
             target: dev
           EOF
 
