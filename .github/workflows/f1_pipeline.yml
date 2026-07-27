@@ -67,6 +67,9 @@ jobs:
           EOF
 
       # Step 7b — Run ingestion
+      - name: Create cache directory
+        run: mkdir -p cache
+
       - name: Run F1 data ingestion
         run: python ingestion/extract_and_load.py
 
