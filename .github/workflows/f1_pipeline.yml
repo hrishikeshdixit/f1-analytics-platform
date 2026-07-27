@@ -51,6 +51,25 @@ jobs:
       - name: Run F1 data ingestion
         run: python ingestion/extract_and_load.py
 
+        # Step 7b — Set up dbt profile
+      - name: Set up dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << EOF
+          f1:
+            outputs:
+              dev:
+                type: bigquery
+                method: service-account
+                project: ${{ secrets.BQ_PROJECT_ID }}
+                dataset: transformed
+                threads: 4
+                timeout_seconds: 300
+                location: US
+                keyfile: secrets/gcp_key.json
+            target: dev
+          EOF
+
       # Step 8 — Run dbt
       - name: Run dbt models
         working-directory: dbt/f1
