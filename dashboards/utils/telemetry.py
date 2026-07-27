@@ -1,5 +1,5 @@
 import streamlit as st
-from dashboards.utils.bigquery import get_bq_client
+import bigquery
 import fastf1
 import pandas as pd
 
@@ -93,23 +93,35 @@ def get_lap_telemetry(year, round_number, driver_code,
 
         # Detect lap type
         fastest_query = f"""
-
-            SELECT lap_number
+            SELECT
+                lap_number,
+                pit_out_time,
+                pit_in_time
             FROM `f1-analytics-491120.transformed.fact_all_sessions`
             WHERE driver_code = '{driver_code}'
             AND round_number = {round_number}
             AND year = {year}
             AND session_type = '{session_type}'
-            AND lap_time_seconds IS NOT NULL
-            ORDER BY lap_time_seconds ASC
-            LIMIT 1
+            AND lap_number = {lap_number}
+            LIMIT 1;
         """
-        fastest = client.query(fastest_query).to_dataframe()
-        fastest_lap = int(fastest.iloc[0]["lap_number"]) if not fastest.empty else None
+        lap_info = client.query(fastest_query).to_dataframe()
 
-        is_flying = fastest_lap is not None and int(lap_number) == fastest_lap
-        df["is_flying"] = is_flying
-        df["lap_type"] = "flying" if is_flying else "cool_down"
+        if lap_info.empty:
+            return None
+
+        pit_out = lap_info.iloc[0]["pit_out_time"]
+        pit_in = lap_info.iloc[0]["pit_in_time"]
+
+        if pit_out is not None:
+            lap_type = "out_lap"
+        elif pit_in is not None:
+            lap_type = "cool_down"
+        else:
+            lap_type = "flying"
+
+        df["lap_type"] = lap_type
+        df["is_flying"] = (lap_type == "flying")
 
         return df
 
