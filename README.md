@@ -232,8 +232,8 @@ The following are excluded from this repo via `.gitignore`:
 | dbt Transformations | ✅ Complete |
 | Streamlit App | ✅ Complete |
 | Looker Studio Dashboard | ✅ Complete |
-| GitHub Actions automation | 🔜 Planned |
-| Docker containerisation | 🔜 Planned |
+| GitHub Actions automation | ✅ Complete |
+| Docker containerisation | ✅ Complete |
 | Airflow orchestration | 🔜 Planned |
 
 ---
