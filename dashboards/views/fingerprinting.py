@@ -42,7 +42,7 @@ def show():
         CLUSTER_NAMES = ml.driver_fingerprints.assign_cluster_labels(df, clusters)
         df['cluster_name'] = df['cluster'].map(CLUSTER_NAMES)
 
-    # ── Driver Selector ──
+# ── Driver Selector ──
     driver_display = dict(zip(df['full_name'], df['driver_code']))
     selected_full_name = st.selectbox(
         "Select Driver",
@@ -50,6 +50,7 @@ def show():
         key="fingerprint_driver_select"
     )
     selected_driver = driver_display[selected_full_name]
+    full_name = df[df['driver_code'] == selected_driver]['full_name'].values[0]
 
     # ── Row 1: Scatter + Similar Drivers ──
     col1, col2 = st.columns([2, 1])
@@ -57,7 +58,7 @@ def show():
     with col1:
         st.subheader("🗺️ Driver Clusters")
         fig_scatter = _build_scatter(df, selected_driver)
-        st.plotly_chart(fig_scatter, width='stretch')
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
     with col2:
         # ── Driver Photo ──
@@ -76,11 +77,11 @@ def show():
     st.markdown("---")
 
     # ── Row 2: Radar Chart ──
-    st.subheader(f"🎯 {selected_driver} — Driving Style Profile")
+    st.subheader(f"🎯 {full_name} — Driving Style Profile")
     fig_radar = _build_radar(df, selected_driver)
     col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
     with col_r2:
-        st.plotly_chart(fig_radar, width='stretch')
+        st.plotly_chart(fig_radar, use_container_width=True)
     st.markdown("---")
 
     # ── Row 3: Stats Table ──
