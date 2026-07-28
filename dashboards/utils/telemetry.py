@@ -13,42 +13,61 @@ def get_telemetry(year, round_number, driver_code, session_identifier='R'):
         'Sprint Qualifying': 'Sprint Qualifying'
     }
     session_type = session_map.get(session_identifier, session_identifier)
+
+    print(f"DEBUG — session_identifier: {session_identifier} → session_type: {session_type}")
     
     query = f"""
-        WITH lap_distances AS (
-            SELECT 
-                lap_number,
-                MAX(distance) AS total_distance
-            FROM `f1-analytics-491120.transformed.stg_telemetry`
-            WHERE driver_code = '{driver_code}'
-            AND round_number = {round_number}
-            AND year = {year}
-            AND session_type = '{session_type}'
-            GROUP BY lap_number
-        ),
-        fastest_lap AS (
-            SELECT lap_number
-            FROM lap_distances
-            ORDER BY total_distance DESC
+        WITH lap_candidates AS (
+            -- Get laps within 107% of fastest lap time
+            SELECT t.lap_number, COUNT(*) as point_count
+            FROM `f1-analytics-491120.transformed.stg_telemetry` t
+            INNER JOIN (
+                SELECT lap_number, lap_time_seconds
+                FROM `f1-analytics-491120.transformed.fact_all_sessions`
+                WHERE driver_code = '{driver_code}'
+                AND round_number = {round_number}
+                AND year = {year}
+                AND session_type = '{session_type}'
+                AND lap_time_seconds IS NOT NULL
+                AND lap_time_seconds > 0
+                AND lap_time_seconds <= (
+                    SELECT MIN(lap_time_seconds) * 1.07
+                    FROM `f1-analytics-491120.transformed.fact_all_sessions`
+                    WHERE driver_code = '{driver_code}'
+                    AND round_number = {round_number}
+                    AND year = {year}
+                    AND session_type = '{session_type}'
+                    AND lap_time_seconds IS NOT NULL
+                    AND lap_time_seconds > 0
+                )
+            ) f ON t.lap_number = f.lap_number
+            WHERE t.driver_code = '{driver_code}'
+            AND t.round_number = {round_number}
+            AND t.year = {year}
+            AND t.session_type = '{session_type}'
+            GROUP BY t.lap_number
+            ORDER BY point_count DESC
             LIMIT 1
         )
         SELECT
-            pos_x       AS X,
-            pos_y       AS Y,
-            pos_z       AS Z,
-            speed       AS Speed,
-            throttle    AS Throttle,
+            pos_x AS X,
+            pos_y AS Y,
+            pos_z AS Z,
+            speed AS Speed,
+            throttle AS Throttle,
             CAST(brake AS INT64) * 100 AS Brake,
-            gear        AS Gear,
-            distance    AS Distance
+            gear AS Gear,
+            distance AS Distance
         FROM `f1-analytics-491120.transformed.stg_telemetry`
         WHERE driver_code = '{driver_code}'
         AND round_number = {round_number}
         AND year = {year}
         AND session_type = '{session_type}'
-        AND lap_number = (SELECT lap_number FROM fastest_lap)
+        AND lap_number = (SELECT lap_number FROM lap_candidates)
         ORDER BY distance
     """
+
+    print(f"DEBUG — full query session_type used: {session_type}")
     
     try:
         df = client.query(query).to_dataframe()
@@ -59,6 +78,7 @@ def get_telemetry(year, round_number, driver_code, session_identifier='R'):
 @st.cache_data
 def get_lap_telemetry(year, round_number, driver_code,
                       lap_number, session_identifier='R'):
+    
     client = get_bq_client()
     
     session_map = {
@@ -86,6 +106,8 @@ def get_lap_telemetry(year, round_number, driver_code,
         ORDER BY distance
     """
 
+    print(f"FUNCTION CALLED — {driver_code} round {round_number} lap {lap_number} session {session_identifier}")
+
     try:
         df = client.query(query).to_dataframe()
         if df.empty:
@@ -96,13 +118,15 @@ def get_lap_telemetry(year, round_number, driver_code,
             SELECT
                 lap_number,
                 pit_out_time,
-                pit_in_time
+                pit_in_time,
+                lap_time_seconds
             FROM `f1-analytics-491120.transformed.fact_all_sessions`
             WHERE driver_code = '{driver_code}'
             AND round_number = {round_number}
             AND year = {year}
             AND session_type = '{session_type}'
-            AND lap_number = {lap_number};
+            AND lap_number = {lap_number}
+            LIMIT 1
         """
         lap_info = client.query(fastest_query).to_dataframe()
 
@@ -112,9 +136,9 @@ def get_lap_telemetry(year, round_number, driver_code,
         pit_out = lap_info.iloc[0]["pit_out_time"]
         pit_in = lap_info.iloc[0]["pit_in_time"]
 
-        if pit_out is not None:
+        if pd.notna(pit_out) and pit_out != 0:
             lap_type = "out_lap"
-        elif pit_in is not None:
+        elif pd.notna(pit_in) and pit_in != 0:
             lap_type = "cool_down"
         else:
             lap_type = "flying"
@@ -126,7 +150,31 @@ def get_lap_telemetry(year, round_number, driver_code,
 
     except Exception:
         return None
-    
+
+@st.cache_data
+def get_circuit_map(year, round_number):
+    """
+    Get official circuit map from FastF1.
+    More reliable than telemetry GPS for track layout.
+    """
+    try:
+        import os
+        # Use /tmp on cloud, local cache/ otherwise
+        cache_dir = '/tmp/fastf1_cache' if os.environ.get('STREAMLIT_SHARING_MODE') \
+            or not os.path.exists('cache/') else 'cache/'
+        
+        # Create cache dir if it doesn't exist
+        os.makedirs(cache_dir, exist_ok=True)
+        fastf1.Cache.enable_cache(cache_dir)
+        
+        session = fastf1.get_session(year, round_number, 'R')
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        circuit_info = session.get_circuit_info()
+        return circuit_info
+    except Exception as e:
+        print(f"Circuit info error: {e}")
+        return None
+
 @st.cache_data
 def get_championship_standings(year):
     """

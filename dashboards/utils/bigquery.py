@@ -14,19 +14,28 @@ SESSION_TABLE_MAP = {
 
 @st.cache_resource
 def get_bq_client():
+    """Create BigQuery client — works locally and on Streamlit Cloud."""
     try:
-        if 'gcp_service_account' in st.secrets:
-            from google.oauth2 import service_account
-            credentials = service_account.Credentials.from_service_account_info(
-                dict(st.secrets['gcp_service_account']),
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
-            )
-            return bigquery.Client(
-                credentials=credentials,
-                project='f1-analytics-491120'
-            )
-        else:
-            return bigquery.Client()
+        # Try Streamlit Cloud secrets first
+        try:
+            if 'gcp_service_account' in st.secrets:
+                from google.oauth2 import service_account
+                credentials = service_account.Credentials.from_service_account_info(
+                    dict(st.secrets['gcp_service_account']),
+                    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                )
+                return bigquery.Client(
+                    credentials=credentials,
+                    project='f1-analytics-491120'
+                )
+        except Exception:
+            pass  # No secrets file — fall through to local
+
+        # Local development — uses .env and gcp_key.json
+        from dotenv import load_dotenv
+        load_dotenv()
+        return bigquery.Client()
+
     except Exception as e:
         st.error(f"BigQuery connection failed: {e}")
         return None
