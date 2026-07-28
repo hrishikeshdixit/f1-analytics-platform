@@ -40,8 +40,8 @@ if 'selected_championship_driver' not in st.session_state:
 with st.sidebar:
     # F1 Logo
     st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg",
-        width=80
+        dashboards/assets/apex_analytics_logo.png,
+        width=100
     )
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
