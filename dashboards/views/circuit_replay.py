@@ -217,7 +217,7 @@ def show():
             fig_tel.add_trace(go.Scatter(
                 x=tel['Distance'], y=tel['Speed'],
                 mode='lines',
-                name=f"{driver} — {lap_label}",
+                name=driver,
                 line=dict(color=trace_color, width=line_width, dash=line_style),
                 opacity=trace_opacity,
                 legendgroup=driver,
@@ -266,13 +266,6 @@ def show():
                 st.caption(f"{driver} — Lap {selected_lap} — {'🟢 Flying' if is_flying else '⚪ Cool Down'}")
 
         st.caption(session_context.get(selected_session, ''))
-        st.markdown("""
-            <small style='color:#888888'>
-            🟢 Flying lap — Team Colour<br>
-            ⚪ Cool down lap — White<br>
-            🔵 Out lap — Sky Blue (#02CCFE)
-            </small>
-        """, unsafe_allow_html=True)
 
         fig_tel.update_layout(
             paper_bgcolor='#1A1A2E',
