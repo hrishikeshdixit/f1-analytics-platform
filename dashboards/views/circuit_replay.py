@@ -59,7 +59,7 @@ def show():
         drivers_df = get_drivers(selected_race, selected_session)
         driver_options = drivers_df['driver_code'].tolist()
         selected_drivers = st.multiselect(
-            "Select Drivers (min 1, max 5)",
+            "Select Drivers (min 1, max 8)",
             driver_options,
             default=[driver_options[0]] if driver_options else []
         )
@@ -67,8 +67,8 @@ def show():
         if len(selected_drivers) == 0:
             st.error("Please select at least 1 driver")
             st.stop()
-        if len(selected_drivers) > 5:
-            st.error("Maximum 5 drivers allowed")
+        if len(selected_drivers) > 8:
+            st.error("Maximum 8 drivers allowed")
             st.stop()
 
     st.caption(f"Round {round_number} — {year}")
