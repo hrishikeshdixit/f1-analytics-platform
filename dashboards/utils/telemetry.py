@@ -78,9 +78,11 @@ def get_telemetry(year, round_number, driver_code, session_identifier='R'):
 @st.cache_data
 def get_lap_telemetry(year, round_number, driver_code,
                       lap_number, session_identifier='R'):
-    
+    """
+    Get full telemetry for a specific lap number from BigQuery.
+    """
     client = get_bq_client()
-    
+
     session_map = {
         'R': 'Race', 'Q': 'Qualifying', 'Sprint': 'Sprint',
         'FP1': 'Practice 1', 'FP2': 'Practice 2', 'FP3': 'Practice 3',
@@ -106,49 +108,19 @@ def get_lap_telemetry(year, round_number, driver_code,
         ORDER BY distance
     """
 
-    print(f"FUNCTION CALLED — {driver_code} round {round_number} lap {lap_number} session {session_identifier}")
-
     try:
         df = client.query(query).to_dataframe()
         if df.empty:
             return None
-
-        # Detect lap type
-        fastest_query = f"""
-            SELECT
-                lap_number,
-                pit_out_time,
-                pit_in_time,
-                lap_time_seconds
-            FROM `f1-analytics-491120.transformed.fact_all_sessions`
-            WHERE driver_code = '{driver_code}'
-            AND round_number = {round_number}
-            AND year = {year}
-            AND session_type = '{session_type}'
-            AND lap_number = {lap_number}
-            LIMIT 1
-        """
-        lap_info = client.query(fastest_query).to_dataframe()
-
-        if lap_info.empty:
-            return None
-
-        pit_out = lap_info.iloc[0]["pit_out_time"]
-        pit_in = lap_info.iloc[0]["pit_in_time"]
-
-        if pd.notna(pit_out) and pit_out != 0:
-            lap_type = "out_lap"
-        elif pd.notna(pit_in) and pit_in != 0:
-            lap_type = "cool_down"
-        else:
-            lap_type = "flying"
-
-        df["lap_type"] = lap_type
-        df["is_flying"] = (lap_type == "flying")
-
+        
+        # Default all laps to flying — no pit detection
+        df['lap_type'] = 'flying'
+        df['is_flying'] = True
+        
         return df
 
-    except Exception:
+    except Exception as e:
+        print(f"Telemetry error: {e}")
         return None
 
 @st.cache_data
