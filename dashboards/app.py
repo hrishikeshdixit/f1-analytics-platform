@@ -41,7 +41,7 @@ with st.sidebar:
     # F1 Logo
     st.image(
         "dashboards/assets/apex_analytics_logo.png",
-        width=400
+        width=500
     )
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
