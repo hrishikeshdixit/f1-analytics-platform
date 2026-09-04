@@ -2,7 +2,7 @@ name: F1 Data Pipeline
 
 on:
   schedule:
-    - cron: '0 9 * * 2' 
+    - cron: '0 9 * * 2'  #  Runs at 0900 HRS every Tuesday
   workflow_dispatch:       # Also allows manual trigger from GitHub UI
 
 jobs:
