@@ -19,11 +19,10 @@ models:
       - name: tyre_compound
         description: "Tyre compound used"
         tests:
+          - not_null
           - accepted_values:
               arguments:
-                values: ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-              config:
-                severity: warn
+                values: ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET', 'None']
       - name: session_type
         description: "Practice 1/2/3, Sprint Qualifying, Sprint, Qualifying, Race"
         tests:

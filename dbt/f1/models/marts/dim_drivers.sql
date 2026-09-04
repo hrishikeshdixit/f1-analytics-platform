@@ -6,7 +6,7 @@ driver_stats AS (
     SELECT
         driver_code,
         driver_number,
-        team,
+        MAX(team) AS team,
 
         -- Performance stats
         COUNT(*)                                    AS total_laps,
@@ -33,7 +33,7 @@ driver_stats AS (
 
     FROM laps
     WHERE lap_time_seconds IS NOT NULL
-    GROUP BY driver_code, driver_number, team
+    GROUP BY driver_code, driver_number
 )
 
 SELECT * FROM driver_stats
