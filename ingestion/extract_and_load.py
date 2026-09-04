@@ -1,3 +1,4 @@
+import sys
 import fastf1
 import pandas as pd
 from google.cloud import bigquery
@@ -63,88 +64,94 @@ def load_to_bigquery(df, table_id):
     print(f"Successfully loaded {len(df)} rows to {table_id}")
 
 def load_telemetry_to_bigquery(df, table_id):
-    """
-    Load telemetry data into a partitioned BigQuery table.
-    Partitioned by RoundNumber for efficient querying.
-    """
     client = bigquery.Client()
-
     job_config = bigquery.LoadJobConfig(
         write_disposition="WRITE_APPEND",
         autodetect=True,
-        time_partitioning=bigquery.TimePartitioning(
-            type_=bigquery.TimePartitioningType.DAY,
-            field=None  # Uses ingestion time
-        ),
         clustering_fields=["Driver", "SessionType", "RoundNumber"]
     )
-
-    print(f"  Loading telemetry to BigQuery: {table_id}")
-    job = client.load_table_from_dataframe(
-        df, table_id, job_config=job_config
-    )
+    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
     job.result()
-    print(f"  ✅ Loaded {len(df)} telemetry points")
+    print(f"  ✅ Loaded {len(df)} rows")
 
-'''
-if __name__ == "__main__":
-    PROJECT_ID = os.getenv('BQ_PROJECT_ID')
-    RAW_DATASET = os.getenv('BQ_DATASET_RAW')
+def extract_telemetry(session, round_number, year):
+    """
+    Extract telemetry for all drivers from a session.
+    Loads telemetry for every lap and stores in BigQuery.
+    """
+    print(f"  Extracting telemetry...")
 
-    races = [
-        (2026, 1, 'R'),   # Australian GP
-        (2026, 2, 'R'),   # Chinese GP
-    ]
-
-    for year, round_num, session_type in races:
-        try:
-            session = extract_session(year, round_num, session_type)
-            laps_df = process_laps(session)
-            load_to_bigquery(laps_df, f"{PROJECT_ID}.{RAW_DATASET}.laps")
-            print(f"Round {round_num} done!")
-        except Exception as e:
-            print(f"Round {round_num} failed: {e}")
-
-if __name__ == "__main__":
-    PROJECT_ID = os.getenv('BQ_PROJECT_ID')
-    RAW_DATASET = os.getenv('BQ_DATASET_RAW')
-    YEAR = 2026
-
-    # Dynamically get all completed rounds so far
-    schedule = fastf1.get_event_schedule(YEAR, include_testing=False)
-    
-    # Filter only rounds that have already happened
-    from datetime import datetime
-    completed = schedule[schedule['EventDate'] < datetime.now()]
-
-    # Check what's already in BigQuery
-    from google.cloud import bigquery
-    client = bigquery.Client()
-    query = f"SELECT DISTINCT RoundNumber FROM `{PROJECT_ID}.{RAW_DATASET}.laps`"
-    
+    # Check if telemetry data is available for this session
     try:
-        existing_rounds = set(
-            row.RoundNumber for row in client.query(query).result()
-        )
-    except:
-        existing_rounds = set()
+        test_driver = session.drivers[0]
+        test_lap = session.laps.pick_driver(test_driver).iloc[0]
+        _ = test_lap.get_telemetry()
+    except Exception:
+        print(f"    ⏭️ {session.name} yet to be loaded")
+        return
 
-    print(f"Already loaded rounds: {existing_rounds}")
+    all_telemetry = []
 
-    # Only load rounds we don't have yet
-    for _, event in completed.iterrows():
-        round_num = event['RoundNumber']
-        if round_num in existing_rounds:
-            print(f"⏭️ Round {round_num} already loaded, skipping")
-            continue
+    for driver in session.drivers:
         try:
-            session = extract_session(YEAR, round_num, 'R')
-            laps_df = process_laps(session)
-            load_to_bigquery(laps_df, f"{PROJECT_ID}.{RAW_DATASET}.laps")
-            print(f"✅ Round {round_num} done!")
+            driver_laps = session.laps.pick_driver(driver)
+
+            if driver_laps.empty:
+                continue
+
+            for _, lap in driver_laps.iterrows():
+                try:
+                    tel = lap.get_telemetry()
+
+                    if tel.empty:
+                        continue
+
+                    # Check required columns
+                    required = ['X', 'Y', 'Speed', 'Distance']
+                    if not all(col in tel.columns for col in required):
+                        continue
+
+                    # Add lap metadata
+                    tel["Driver"] = session.get_driver(driver)["Abbreviation"]
+                    tel["RaceName"] = session.event["EventName"]
+                    tel["RoundNumber"] = round_number
+                    tel["Year"] = year
+                    tel["SessionType"] = session.name
+                    tel["LapNumber"] = lap["LapNumber"]
+
+                    # Select only needed columns
+                    cols = [
+                        "Driver", "RaceName", "RoundNumber", "Year",
+                        "SessionType", "LapNumber", "X", "Y",
+                        "Distance", "Speed"
+                    ]
+
+                    optional = ["Z", "Throttle", "Brake", "nGear", "IsAccurate"]
+                    for col in optional:
+                        if col in tel.columns:
+                            cols.append(col)
+
+                    all_telemetry.append(tel[cols])
+
+                except Exception:
+                    continue
+
         except Exception as e:
-            print(f"❌ Round {round_num} failed: {e}")
-'''
+            print(f"    ⚠️ No telemetry for {driver}: {e}")
+            continue
+    
+    if all_telemetry:
+        df = pd.concat(all_telemetry, ignore_index=True)
+        
+        # Convert timedelta columns
+        for col in df.columns:
+            if df[col].dtype == 'timedelta64[ns]':
+                df[col] = df[col].dt.total_seconds()
+        
+        print(f"  Processed {len(df)} telemetry points")
+        return df
+    
+    return None
 
 if __name__ == "__main__":
     PROJECT_ID = os.getenv('BQ_PROJECT_ID')
@@ -157,7 +164,7 @@ if __name__ == "__main__":
     # Dynamically get all completed rounds
     schedule = fastf1.get_event_schedule(YEAR, include_testing=False)
 
-    current_time = pd.Timestamp.now()
+    current_time = pd.Timestamp.now(tz='UTC')
 
     # Check what's already in BigQuery
     client = bigquery.Client()
@@ -171,7 +178,7 @@ if __name__ == "__main__":
         existing_sessions = set(
             zip(existing['RoundNumber'], existing['SessionType'])
         )
-    except:
+    except Exception:
         existing_sessions = set()
 
     print(f"Already loaded sessions: {existing_sessions}")
@@ -192,7 +199,12 @@ if __name__ == "__main__":
 
     print(f"Already loaded telemetry sessions: {existing_telemetry}")
 
+    pipeline_failed = False
+
     for _, event in schedule.iterrows():
+        if pipeline_failed:
+            break
+
         round_num = event['RoundNumber']
         race_name = event['EventName']
         print(f"\n── Round {round_num}: {race_name} ──")
@@ -207,22 +219,34 @@ if __name__ == "__main__":
                     available_sessions.append(session_name)
             print(f"  Available sessions: {available_sessions}")
         except Exception as e:
-            print(f"  Could not get sessions for Round {round_num}: {e}")
-            continue
+            # Could not even fetch the schedule for this round — treat as a
+            # real failure and stop, rather than silently skipping the round.
+            print(f"  ❌ Could not get sessions for Round {round_num}: {e}")
+            pipeline_failed = True
+            break
 
         for session_type in available_sessions:
-            # Check if already loaded
+            # 1) Already loaded --> skip
             if (round_num, session_type) in existing_sessions:
                 print(f"  ⏭️ {session_type} already loaded, skipping")
                 continue
 
+            # 2) Not present because it hasn't happened yet --> skip (not a failure)
+            session_start = event_obj.get(f'Session{available_sessions.index(session_type) + 1}DateUtc')
+            if session_start is not None and pd.notna(session_start):
+                if pd.Timestamp(session_start, tz='UTC') > current_time:
+                    print(f"  ⏳ {session_type} hasn't happened yet, skipping")
+                    continue
+
+            # 3) Not present and already happened --> load; stop pipeline on first real failure
             try:
                 session = extract_session(YEAR, round_num, session_type)
                 laps_df = process_laps(session)
 
                 if laps_df.empty:
-                    print(f"  ⚠️ {session_type} — no lap data")
-                    continue
+                    print(f"  ⚠️ {session_type} — no lap data (treating as failure)")
+                    pipeline_failed = True
+                    break
 
                 # Load laps
                 load_to_bigquery(
@@ -241,8 +265,18 @@ if __name__ == "__main__":
                             f"{PROJECT_ID}.{RAW_DATASET}.telemetry"
                         )
                         print(f"  ✅ {session_type} telemetry done!")
+                    else:
+                        print(f"  ⚠️ {session_type} — no telemetry data")
                 else:
                     print(f"  ⏭️ {session_type} telemetry already loaded")
 
             except Exception as e:
                 print(f"  ❌ {session_type} failed: {e}")
+                pipeline_failed = True
+                break
+
+    if pipeline_failed:
+        print("\n🛑 Pipeline stopped due to failure.")
+        sys.exit(1)
+    else:
+        print("\n✅ Pipeline completed successfully.")
