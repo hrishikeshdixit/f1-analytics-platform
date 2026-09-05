@@ -1,0 +1,36 @@
+name: F1 Build Cache
+
+on:
+  schedule:
+    - cron: '0 11 * * 6'  # Saturday 5AM CST (Saturday 11AM UTC) — before race weekend
+  workflow_dispatch:
+
+jobs:
+  build_cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Restore FastF1 cache
+        uses: actions/cache@v4
+        with:
+          path: cache/
+          key: fastf1-cache-${{ runner.os }}-2026
+          restore-keys: |
+            fastf1-cache-${{ runner.os }}-
+
+      - name: Create cache directory
+        run: mkdir -p cache
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build FastF1 cache
+        run: python build_cache.py
