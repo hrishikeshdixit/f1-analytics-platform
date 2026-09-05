@@ -72,7 +72,6 @@ jobs:
           dbt deps
           dbt run
           dbt test
-          exit 1
 
       - name: Send failure notification
         if: failure()
