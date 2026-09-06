@@ -19,7 +19,12 @@ def extract_session(year, round_number, session_type='R'):
     """
     print(f"Extracting {session_type} session - Year: {year}, Round: {round_number}")
     session = fastf1.get_session(year, round_number, session_type)
-    session.load()
+    session.load(
+        laps = True,
+        telemetry = False,
+        weather = False,
+        messages = False,
+      )
     return session
 
 def process_laps(session):
