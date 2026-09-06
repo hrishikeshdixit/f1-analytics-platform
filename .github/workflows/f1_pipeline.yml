@@ -2,8 +2,8 @@ name: F1 Data Pipeline
 
 on:
   schedule:
-    - cron: '0 3 * * 1'   # Monday 3am UTC = Sunday 9pm CST — catches Saturday races
-    - cron: '0 3 * * 2'   # Tuesday 3am UTC = Monday 9pm CST — catches Sunday races
+    - cron: '0 3 * * 1'   # Monday 3am UTC = Sunday 9pm CST
+    - cron: '0 3 * * 2'   # Tuesday 3am UTC = Monday 9pm CST
   workflow_dispatch:
 
 jobs:
@@ -19,13 +19,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache FastF1 data
+      - name: Restore FastF1 cache
+        id: cache_restore
         uses: actions/cache@v4
         with:
           path: cache/
-          key: fastf1-cache-${{ runner.os }}-${{ github.run_id }}
+          key: fastf1-cache-${{ runner.os }}-2026
           restore-keys: |
             fastf1-cache-${{ runner.os }}-
+
+      - name: Check cache was built
+        if: steps.cache_restore.outputs.cache-hit != 'true'
+        run: |
+          echo "❌ FastF1 cache not found — cache build may have failed!"
+          echo "Run f1_cache.yml first before running the pipeline."
+          exit 1
 
       - name: Create cache directory
         run: mkdir -p cache
@@ -84,10 +92,8 @@ jobs:
           subject: "❌ F1 Pipeline Failed — ${{ github.run_id }}"
           body: |
             F1 Analytics Pipeline failed!
-
             Run ID: ${{ github.run_id }}
             Triggered by: ${{ github.event_name }}
-
             View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: thehrishikeshdixit@gmail.com
           from: F1 Analytics Pipeline
@@ -103,10 +109,8 @@ jobs:
           subject: "✅ F1 Pipeline Succeeded — ${{ github.run_id }}"
           body: |
             F1 Analytics Pipeline completed successfully!
-
             Run ID: ${{ github.run_id }}
             Triggered by: ${{ github.event_name }}
-
             View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: thehrishikeshdixit@gmail.com
           from: F1 Analytics Pipeline
