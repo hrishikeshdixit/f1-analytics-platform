@@ -9,6 +9,7 @@ on:
 jobs:
   run_pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -23,7 +24,7 @@ jobs:
         id: cache_restore
         uses: actions/cache@v4
         with:
-          path: cache/
+          path: /tmp/fastf1_cache
           key: fastf1-cache-${{ runner.os }}-2026
           restore-keys: |
             fastf1-cache-${{ runner.os }}-
@@ -31,12 +32,10 @@ jobs:
       - name: Check cache was built
         if: steps.cache_restore.outputs.cache-hit != 'true'
         run: |
-          echo "❌ FastF1 cache not found — cache build may have failed!"
-          echo "Run f1_cache.yml first before running the pipeline."
-          exit 1
+          echo "⚠️ FastF1 cache not found — will attempt live download with retries"
 
       - name: Create cache directory
-        run: mkdir -p cache
+        run: mkdir -p /tmp/fastf1_cache
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -52,6 +51,7 @@ jobs:
           echo "BQ_PROJECT_ID=${{ secrets.BQ_PROJECT_ID }}" >> .env
           echo "BQ_DATASET_RAW=raw" >> .env
           echo "BQ_DATASET_TRANSFORMED=transformed" >> .env
+          echo "GITHUB_ACTIONS=true" >> .env
 
       - name: Set up dbt profile
         run: |
@@ -92,8 +92,10 @@ jobs:
           subject: "❌ F1 Pipeline Failed — ${{ github.run_id }}"
           body: |
             F1 Analytics Pipeline failed!
+
             Run ID: ${{ github.run_id }}
             Triggered by: ${{ github.event_name }}
+
             View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: thehrishikeshdixit@gmail.com
           from: F1 Analytics Pipeline
@@ -109,8 +111,10 @@ jobs:
           subject: "✅ F1 Pipeline Succeeded — ${{ github.run_id }}"
           body: |
             F1 Analytics Pipeline completed successfully!
+
             Run ID: ${{ github.run_id }}
             Triggered by: ${{ github.event_name }}
+
             View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: thehrishikeshdixit@gmail.com
           from: F1 Analytics Pipeline
