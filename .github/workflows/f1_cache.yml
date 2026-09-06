@@ -1,15 +1,12 @@
 name: F1 Build Cache
-
 on:
   schedule:
-    - cron: '0 11 * * 6'  # Saturday 5AM CST (Saturday 11AM UTC) — before race weekend
+    - cron: '0 11 * * 6'
   workflow_dispatch:
-
 jobs:
   build_cache:
     runs-on: ubuntu-latest
     timeout-minutes: 360
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,11 +16,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
       - name: Restore FastF1 cache
         uses: actions/cache@v4
         with:
           path: cache/
-          key: fastf1-cache-${{ runner.os }}-2026
+          key: fastf1-cache-${{ runner.os }}-${{ steps.date.outputs.date }}
           restore-keys: |
             fastf1-cache-${{ runner.os }}-
 
