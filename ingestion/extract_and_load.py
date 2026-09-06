@@ -10,7 +10,7 @@ import os
 load_dotenv()
 
 # Enable FastF1 cache
-cache_dir = '/tmp/fastf1_cache' if os.environ.get('GITHUB_ACTIONS') else 'cache/'
+cache_dir = 'cache/'
 os.makedirs(cache_dir, exist_ok=True)
 fastf1.Cache.enable_cache(cache_dir)
 
