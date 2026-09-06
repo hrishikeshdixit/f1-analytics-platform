@@ -24,7 +24,7 @@ jobs:
         id: cache_restore
         uses: actions/cache@v4
         with:
-          path: /tmp/fastf1_cache
+          path: cache/
           key: fastf1-cache-${{ runner.os }}-2026
           restore-keys: |
             fastf1-cache-${{ runner.os }}-
